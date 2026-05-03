@@ -1,0 +1,88 @@
+# Customer Support MCP – Docker Compose
+# ──────────────────────────────────────
+# Starts the MCP server + a local Ollama instance for unlimited free LLM inference.
+#
+# Quick start:
+#   docker compose up
+#
+# Pull the Ollama model (first run):
+#   docker compose exec ollama ollama pull llama3.2
+#
+# Environment variables:
+#   Copy .env.example to .env and fill in your Groq API key.
+#   Ollama is used automatically when Groq quota is exhausted.
+
+version: "3.9"
+
+services:
+
+  # ── Ollama – local LLM server ───────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cs-mcp-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Uncomment to enable GPU acceleration (requires NVIDIA Container Toolkit):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Model pull (one-shot init container) ────────────────────────────────────
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: cs-mcp-ollama-pull
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-llama3.2}"]
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # ── CustomerSupport MCP Server ──────────────────────────────────────────────
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cs-mcp-server
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Override Ollama URL to reach the service container
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_ENABLED: "true"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      LOG_FORMAT: "json"
+    volumes:
+      # Persist the SQLite database across container restarts
+      - mcp_data:/app/data
+      - mcp_logs:/app/logs
+    stdin_open: true
+    tty: true
+
+volumes:
+  ollama_data:
+    driver: local
+  mcp_data:
+    driver: local
+  mcp_logs:
+    driver: local

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Secrets / env files
+.env
+*.env.local
+
+# Logs (generated at runtime)
+logs/
+
+# IDE / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Test artefacts
+.pytest_cache/
+.coverage
+htmlcov/

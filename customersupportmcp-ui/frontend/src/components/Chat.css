@@ -1,0 +1,286 @@
+/* ── Chat panel ────────────────────────────────────────────────── */
+.chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+}
+
+/* Status bar */
+.chat-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.on  { background: #22c55e; box-shadow: 0 0 0 3px #dcfce7; }
+.status-dot.off { background: #ef4444; box-shadow: 0 0 0 3px #fee2e2; }
+
+/* Messages scroll area */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+/* Individual message row */
+.message {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  max-width: 80%;
+  animation: msgIn .18s ease;
+}
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.message.ai   { align-self: flex-start; }
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Avatar */
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  background: var(--primary-light);
+}
+.user-avatar { background: #e2e8f0; }
+
+/* Bubble */
+.bubble {
+  padding: 11px 15px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.message.ai .bubble {
+  background: var(--surface);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.message.user .bubble {
+  background: var(--primary);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.message.error-msg .bubble {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Streaming cursor */
+.cursor {
+  display: inline-block;
+  color: var(--primary);
+  margin-left: 2px;
+  animation: blink .65s step-end infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Typing dots */
+.typing-bubble {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 18px !important;
+}
+.typing-bubble span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: .35;
+  animation: dot 1.2s infinite;
+}
+.typing-bubble span:nth-child(1) { animation-delay: 0s;    }
+.typing-bubble span:nth-child(2) { animation-delay: .2s;   }
+.typing-bubble span:nth-child(3) { animation-delay: .4s;   }
+
+@keyframes dot {
+  0%, 60%, 100% { transform: translateY(0);   opacity: .35; }
+  30%           { transform: translateY(-6px); opacity: 1;   }
+}
+
+/* Suggestion pills */
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 20px 4px;
+  flex-shrink: 0;
+}
+.suggestion-pill {
+  padding: 5px 12px;
+  border: 1.5px solid var(--primary-light);
+  border-radius: 20px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.suggestion-pill:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Input area */
+.input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 20px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.input-area textarea {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color .2s;
+  background: var(--bg);
+}
+.input-area textarea:focus { border-color: var(--primary); background: #fff; }
+.input-area textarea:disabled { opacity: .5; }
+
+.send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s, transform .1s;
+}
+.send-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: scale(1.06);
+}
+.send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+/* ── Tool-call activity chips ───────────────────────────────────── */
+.tool-activity-row {
+  align-items: flex-start !important;
+  max-width: 90% !important;
+}
+
+.tool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1.5px solid var(--primary-light);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  animation: chipIn .2s ease;
+  transition: background .25s, color .25s, border-color .25s;
+}
+
+.tool-chip.active {
+  animation: chipIn .2s ease, chipPulse 1.4s ease-in-out infinite;
+}
+
+.tool-chip.done {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.tool-check {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(.85) translateY(4px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+@keyframes chipPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .6; }
+}
+
+/* ── Live metrics badge in status bar ───────────────────────────── */
+.metrics-badge {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-value {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+

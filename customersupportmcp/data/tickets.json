@@ -1,0 +1,35 @@
+{
+  "TKT-FE9DD327": {
+    "ticket_id": "TKT-FE9DD327",
+    "customer_id": "CUST-002",
+    "subject": "Package not delivered",
+    "description": "My order ORD-1003 shows 'processing' but it has been 3 days. I need an update.",
+    "priority": "high",
+    "status": "open",
+    "created_at": "2026-05-02T23:18:11.538694+00:00",
+    "updated_at": "2026-05-02T23:18:11.538694+00:00",
+    "notes": []
+  },
+  "TKT-36CE85B6": {
+    "ticket_id": "TKT-36CE85B6",
+    "customer_id": "CUST-001",
+    "subject": "KB-017 Issue",
+    "description": "Customer is experiencing an issue with KB-017",
+    "priority": "high",
+    "status": "open",
+    "created_at": "2026-05-02T23:45:04.469543+00:00",
+    "updated_at": "2026-05-02T23:45:04.469543+00:00",
+    "notes": []
+  },
+  "TKT-D0915223": {
+    "ticket_id": "TKT-D0915223",
+    "customer_id": "CUST-001",
+    "subject": "dd",
+    "description": "dd",
+    "priority": "medium",
+    "status": "open",
+    "created_at": "2026-05-02T23:55:18.949986+00:00",
+    "updated_at": "2026-05-02T23:55:18.949986+00:00",
+    "notes": []
+  }
+}

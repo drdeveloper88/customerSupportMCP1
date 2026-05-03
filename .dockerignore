@@ -1,0 +1,43 @@
+# ── Parent-level .dockerignore ────────────────────────────────────────────────
+# Used when build context is "dambar projects/" (e.g. customersupportmcp-ui
+# docker-compose with context: ..)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
+**/.venv/
+**/venv/
+**/env/
+**/*.egg-info/
+
+# Secrets — never bake into images
+**/.env
+**/*.env.local
+
+# Node
+**/node_modules/
+**/dist/
+**/npm-debug.log*
+
+# ChromaDB persistent store (rebuilt at runtime)
+customersupportmcp/data/chroma_db/
+
+# SQLite DB (mounted as volume at runtime)
+customersupportmcp/data/support.db
+
+# Logs
+**/logs/
+
+# IDE / OS
+**/.vscode/
+**/.idea/
+**/.DS_Store
+**/Thumbs.db
+
+# Test artefacts
+**/.coverage
+**/htmlcov/

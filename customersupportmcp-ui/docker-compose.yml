@@ -1,0 +1,111 @@
+# ── Customer Support MCP — Docker Compose ─────────────────────────────────────
+#
+# Services
+# ────────
+#  backend   FastAPI + MCP server bundled (port 8000)
+#  frontend  React/Vite → nginx static serve (port 3000)
+#
+# Usage
+# ─────
+#  docker compose up --build          # first time
+#  docker compose up -d               # detached
+#  docker compose logs -f backend     # tail backend logs
+#  docker compose down -v             # stop + remove volumes
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+
+  # ── Ollama (local LLM – free, unlimited, used when all Groq quota is gone) ─
+  ollama:
+    image: ollama/ollama:latest
+    container_name: customersupport-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_models:/root/.ollama
+    # Starts the Ollama server then pulls the model (skipped on subsequent
+    # restarts because the model is stored in the named volume).
+    entrypoint: ["/bin/sh", "-c",
+      "ollama serve & until ollama list 2>/dev/null; do sleep 2; done && ollama pull llama3.2 && wait"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    # ── GPU support (optional) ──────────────────────────────────────────────
+    # Uncomment the section below if you have an NVIDIA GPU and want GPU inference.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ── FastAPI backend (bundles MCP server as subprocess) ────────────────────
+  backend:
+    build:
+      context: ..                                    # parent: dambar projects/
+      dockerfile: customersupportmcp-ui/backend/Dockerfile
+    image: customersupport-backend:latest
+    container_name: customersupport-backend
+    restart: unless-stopped
+    env_file:
+      - ../customersupportmcp/.env          # supplies GROQ_API_KEY & GROQ_MODEL
+    environment:
+      # MCP server path inside the container (set in Dockerfile)
+      MCP_SERVER_PATH: /app/mcp_server/main.py
+      # CORS – frontend URL as seen by the browser
+      FRONTEND_URL: "http://localhost:3000"
+      # Logging
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      LOG_FORMAT: "${LOG_FORMAT:-json}"
+      # Uvicorn
+      PORT: "8000"
+      # Ollama fallback — connects to the ollama service in this compose stack
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_ENABLED: "true"
+      # SQLite DB directory (separate from source code)
+      DATA_DIR: /app/db_data
+    depends_on:
+      ollama:
+        condition: service_started   # don't block – model pull runs in background
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist SQLite DB and log files across restarts
+      - backend_data:/app/db_data
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── React frontend (nginx) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ..                                    # parent: dambar projects/
+      dockerfile: customersupportmcp-ui/frontend/Dockerfile
+      args:
+        # Tell the Vite bundle where the backend is reachable from the browser.
+        # In this compose setup nginx proxies /api and /ws to the backend
+        # service, so the value is an empty string (same origin).
+        VITE_API_URL: ""
+    image: customersupport-frontend:latest
+    container_name: customersupport-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_data:
+  backend_logs:
+  ollama_models:    # persists pulled models — survives container restarts

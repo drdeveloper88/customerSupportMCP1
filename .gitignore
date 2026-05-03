@@ -1,0 +1,61 @@
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ── Environment / secrets ───────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Testing & coverage ──────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+*.coveragerc
+coverage.xml
+*.log
+
+# ── Databases (runtime data — rebuilt on first run) ─────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+customersupportmcp/data/chroma_db/
+customersupportmcp/data/support.db
+
+# ── Logs ────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Node / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+customersupportmcp-ui/frontend/dist/
+customersupportmcp-ui/frontend/.vite/
+
+# ── Docker ──────────────────────────────────────────────────────────────────
+# (docker-compose files are committed; only transient files excluded)
+
+# ── IDE / OS ─────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Old Projects (not part of this repo) ────────────────────────────────────
+Old Projects/
+Old Projects.zip

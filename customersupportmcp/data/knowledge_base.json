@@ -1,0 +1,121 @@
+[
+  {
+    "id": "KB-001",
+    "category": "Shipping & Delivery",
+    "question": "How long does shipping take?",
+    "answer": "Standard shipping takes 5-7 business days. Express shipping (2-3 business days) and overnight shipping are also available for an additional fee.",
+    "keywords": ["shipping", "delivery", "time", "days", "fast", "quick", "when", "arrive", "how long"]
+  },
+  {
+    "id": "KB-002",
+    "category": "Shipping & Delivery",
+    "question": "How can I track my order?",
+    "answer": "Once your order ships, you will receive a tracking number via email. You can use this tracking number on our website or the carrier's website to see real-time updates.",
+    "keywords": ["track", "tracking", "order", "number", "where", "status", "locate", "find"]
+  },
+  {
+    "id": "KB-003",
+    "category": "Shipping & Delivery",
+    "question": "Do you ship internationally?",
+    "answer": "Yes, we ship to over 50 countries. International shipping takes 10-21 business days. Additional customs fees and import duties may apply based on your country's regulations.",
+    "keywords": ["international", "overseas", "global", "country", "abroad", "outside", "world"]
+  },
+  {
+    "id": "KB-004",
+    "category": "Shipping & Delivery",
+    "question": "What happens if my package is lost or damaged?",
+    "answer": "If your package is lost or arrives damaged, please contact us within 7 days of the expected delivery date. We will investigate with the carrier and either reship your order or issue a full refund.",
+    "keywords": ["lost", "damaged", "missing", "broken", "package", "stolen", "never arrived", "not received"]
+  },
+  {
+    "id": "KB-005",
+    "category": "Returns & Refunds",
+    "question": "What is your return policy?",
+    "answer": "We accept returns within 30 days of delivery. Items must be unused and in original packaging. To initiate a return, contact our support team with your order ID and reason for return.",
+    "keywords": ["return", "refund", "policy", "30 days", "exchange", "send back", "unwanted"]
+  },
+  {
+    "id": "KB-006",
+    "category": "Returns & Refunds",
+    "question": "How long does a refund take to process?",
+    "answer": "Refunds are processed within 3-5 business days after we receive the returned item. Credit card refunds may take an additional 2-3 business days to appear on your statement.",
+    "keywords": ["refund", "time", "how long", "money back", "credit", "process", "receive", "pending"]
+  },
+  {
+    "id": "KB-007",
+    "category": "Returns & Refunds",
+    "question": "Can I exchange an item instead of returning it?",
+    "answer": "Yes, we offer exchanges within 30 days of delivery. Contact our support team with your order ID and the item you would like to exchange for. Price differences will be charged or refunded accordingly.",
+    "keywords": ["exchange", "swap", "replace", "different", "size", "color", "variant", "trade"]
+  },
+  {
+    "id": "KB-008",
+    "category": "Orders",
+    "question": "Can I cancel my order after placing it?",
+    "answer": "Orders can be cancelled within 1 hour of placement if they have not yet been processed. After that, you may need to wait for delivery and then initiate a return. Contact us immediately for cancellation requests.",
+    "keywords": ["cancel", "cancellation", "stop", "change mind", "order", "undo"]
+  },
+  {
+    "id": "KB-009",
+    "category": "Orders",
+    "question": "Can I modify my order after placing it?",
+    "answer": "Order modifications (address changes, item changes) can only be made within 1 hour of placing the order. After that, the order enters our fulfillment process. Please contact support immediately if you need changes.",
+    "keywords": ["modify", "change", "edit", "update", "order", "address", "item", "wrong"]
+  },
+  {
+    "id": "KB-010",
+    "category": "Payment & Billing",
+    "question": "What payment methods do you accept?",
+    "answer": "We accept all major credit cards (Visa, Mastercard, American Express, Discover), PayPal, Apple Pay, Google Pay, and bank transfers. We do not accept cash or checks.",
+    "keywords": ["payment", "pay", "credit card", "paypal", "method", "accept", "billing", "visa", "mastercard", "apple pay"]
+  },
+  {
+    "id": "KB-011",
+    "category": "Payment & Billing",
+    "question": "Why was my payment declined?",
+    "answer": "Payment declines can occur due to: incorrect card details, insufficient funds, card not enabled for online transactions, or bank fraud prevention measures. Verify your details and contact your bank if the issue persists.",
+    "keywords": ["payment declined", "card declined", "failed", "error", "rejected", "billing", "charge", "not working"]
+  },
+  {
+    "id": "KB-012",
+    "category": "Account Management",
+    "question": "How do I reset my password?",
+    "answer": "Click 'Forgot Password' on the login page and enter your registered email. You will receive a password reset link within 5 minutes. Check your spam or junk folder if you do not see the email.",
+    "keywords": ["password", "reset", "forgot", "login", "access", "account", "locked", "sign in"]
+  },
+  {
+    "id": "KB-013",
+    "category": "Account Management",
+    "question": "How do I update my shipping address?",
+    "answer": "You can update your default shipping address in Account Settings > Addresses. For address changes on a specific active order, contact support immediately as changes may not be possible after processing.",
+    "keywords": ["address", "update", "change", "shipping", "delivery", "location", "move", "wrong address"]
+  },
+  {
+    "id": "KB-014",
+    "category": "Product Questions",
+    "question": "Do products come with a warranty?",
+    "answer": "Most products include a 1-year manufacturer warranty. Extended warranty options are available at checkout. Warranty claims should be submitted through support with your proof of purchase.",
+    "keywords": ["warranty", "guarantee", "broken", "defective", "repair", "replace", "manufacturer", "claim"]
+  },
+  {
+    "id": "KB-015",
+    "category": "Product Questions",
+    "question": "How do I check if a product is compatible with my device?",
+    "answer": "Each product page has a compatibility section listing supported devices and requirements. You can also contact support for personalized compatibility advice before purchasing.",
+    "keywords": ["compatible", "compatibility", "work", "device", "fit", "support", "product", "specs", "requirements"]
+  },
+  {
+    "id": "KB-016",
+    "category": "Orders",
+    "question": "I received the wrong item. What should I do?",
+    "answer": "We apologize for the mistake! Please contact support within 7 days of delivery with your order ID and a photo of the wrong item. We will arrange a free return and send the correct item immediately.",
+    "keywords": ["wrong item", "incorrect", "different", "mistake", "error", "not what I ordered", "wrong product"]
+  },
+  {
+    "id": "KB-017",
+    "category": "Payment & Billing",
+    "question": "Can I get an invoice for my order?",
+    "answer": "Yes, an invoice is automatically emailed to you after purchase. You can also download your invoice from Account > Order History. For business invoices with company details, contact support.",
+    "keywords": ["invoice", "receipt", "tax", "billing", "document", "proof of purchase", "download"]
+  }
+]

@@ -1,0 +1,22 @@
+# ── Core MCP & AI ────────────────────────────────────────────────────────────
+fastmcp
+langchain
+langchain-groq
+langchain-core
+langchain-ollama          # Ollama fallback LLM (local, unlimited)
+langgraph
+langsmith                 # Optional: LangSmith tracing & observability
+
+# ── RAG — semantic search & ticket similarity ─────────────────────────────────
+chromadb>=0.5             # Local persistent vector store (no server needed)
+sentence-transformers>=3.0  # all-MiniLM-L6-v2 embeddings (~90 MB, no API key)
+
+# ── Data & Configuration ──────────────────────────────────────────────────────
+python-dotenv
+pydantic>=2.0
+sqlalchemy
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest>=8.0
+pytest-asyncio>=0.23
+pytest-mock>=3.12
