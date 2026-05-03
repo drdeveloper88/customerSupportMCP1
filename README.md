@@ -19,43 +19,91 @@ You can use just the CLI client to chat, or spin up the web UI to get a full pro
 
 ---
 
-## 🏗 How the System Works (Simple Explanation)
+## 🏗 System Architecture
 
 ```
-You (browser or terminal)
-       |
-       | WebSocket / MCP protocol / HTTP
-       v
-+------------------------------------------------+
-|  React frontend  (nginx, port 3000)            |
-|  -> Chat window, orders sidebar, analytics     |
-+-------------------+----------------------------+
-                    | /api/* and /ws/* reverse-proxy
-                    v
-+------------------------------------------------+
-|  FastAPI backend  (Python, port 8000)          |
-|  -> REST + WebSocket endpoints                 |
-|  -> Security middleware, request logging       |
-+-------------------+----------------------------+
-                    | direct Python import (no subprocess)
-                    v
-+------------------------------------------------+
-|  MCP Server  (customersupportmcp)              |
-|  -> @gateway decorator (rate limit, injection) |
-|  -> LangGraph ReAct agent                      |
-|  -> 9 agent tools                              |
-+----------+-------------------------------------+
-           |                    |
-           v                    v
-  SQLite database         ChromaDB (vector)
-  orders, tickets         FAQ articles
-  refunds, notes          Similar tickets
-  conversations
-           |
-           v
-  Groq API (cloud LLM)  --> Ollama (local LLM fallback)
-  5 free models               llama3.2
-  automatic failover
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                        CLIENT TIER  (User-Facing)                              ║
+║                                                                                  ║
+║   ┌─────────────────────────────────┐    ┌──────────────────────────────────┐  ║
+║   │   Web Browser                   │    │   CLI / MCP-compatible Client    │  ║
+║   │   React 18 + Vite               │    │   (Claude Desktop, chat.py)      │  ║
+║   │   Chat · Dashboard · Sidebar    │    │   PythonStdioTransport           │  ║
+║   └──────────────┬──────────────────┘    └────────────────┬─────────────────┘  ║
+╚═════════════════╪══════════════════════════════════════════╪════════════════════╝
+                  │  HTTP / WebSocket (ws://)                │  MCP over stdio
+                  │  port 3000                               │  (JSON-RPC 2.0)
+╔═════════════════╪══════════════════════════════════════════╪════════════════════╗
+║                 ▼      PRESENTATION TIER                   ▼                   ║
+║   ┌──────────────────────────────────────────────────────────────────────────┐  ║
+║   │                    nginx  (port 3000)                                    │  ║
+║   │         Static bundle (/*)    ·    Reverse-proxy /api and /ws            │  ║
+║   └─────────────────────────────────────┬────────────────────────────────────┘  ║
+╚═════════════════════════════════════════╪══════════════════════════════════════╝
+                                          │  HTTP / WebSocket
+                                          │  (internal Docker network)
+╔═════════════════════════════════════════╪══════════════════════════════════════╗
+║                                         ▼     API TIER                         ║
+║   ┌──────────────────────────────────────────────────────────────────────────┐  ║
+║   │                    FastAPI  +  Uvicorn  (port 8000)                      │  ║
+║   │                                                                          │  ║
+║   │  ┌──────────────────────────────────────────────────────────────────┐   │  ║
+║   │  │  Middleware Stack (request order)                                │   │  ║
+║   │  │  SecurityHeadersMiddleware → RequestContextMiddleware → CORS     │   │  ║
+║   │  │  X-Request-ID · X-Response-Time · OWASP security headers        │   │  ║
+║   │  └──────────────────────────────────────────────────────────────────┘   │  ║
+║   │                                                                          │  ║
+║   │  REST Endpoints             WebSocket Endpoint                           │  ║
+║   │  GET  /api/v1/health        WS /api/v1/ws/chat/{customer_id}             │  ║
+║   │  GET  /api/v1/orders        ├─ connected · typing · tool_start           │  ║
+║   │  POST /api/v1/tickets       ├─ tool_end · token (stream)                 │  ║
+║   │  GET  /api/v1/faq           └─ done · error                              │  ║
+║   │  GET  /api/v1/analytics                                                  │  ║
+║   │  GET  /api/v1/metrics/stream  (SSE)                                      │  ║
+║   └──────────────────────────────────┬───────────────────────────────────────┘  ║
+╚════════════════════════════════════════╪═════════════════════════════════════════╝
+                                         │  Direct Python import
+                                         │  (zero-IPC — same process)
+╔════════════════════════════════════════╪═════════════════════════════════════════╗
+║                                        ▼    AGENT / TOOL TIER                   ║
+║   ┌──────────────────────────────────────────────────────────────────────────┐  ║
+║   │              MCP Server  —  customersupportmcp                           │  ║
+║   │                                                                          │  ║
+║   │  ┌────────────────────────────────────────────────────────────────────┐  │  ║
+║   │  │  @gateway Decorator  (applied to every tool call)                 │  │  ║
+║   │  │  ├─ Rate Limiter: sliding-window, 10 req/60 s per customer        │  │  ║
+║   │  │  ├─ Injection Guard: OWASP LLM01 regex (_INJECTION_RE)            │  │  ║
+║   │  │  └─ Structured request/response logging with customer context     │  │  ║
+║   │  └────────────────────────────────────────────────────────────────────┘  │  ║
+║   │                              │                                            │  ║
+║   │                              ▼                                            │  ║
+║   │  ┌────────────────────────────────────────────────────────────────────┐  │  ║
+║   │  │  LangGraph  ReAct Agent                                           │  │  ║
+║   │  │  ├─ System prompt: 10 behavioral guidelines                       │  │  ║
+║   │  │  ├─ Hallucination guard: strips raw tool-call artifacts           │  │  ║
+║   │  │  ├─ Streaming: tool_start → token → tool_end → done              │  │  ║
+║   │  │  └─ 9 agent tools (order · ticket · KB · refund · escalate)      │  │  ║
+║   │  └────────────────────────────────────────────────────────────────────┘  │  ║
+║   └──────────────────────────────────────────────────────────────────────────┘  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+         │                    │                              │
+         ▼                    ▼                              ▼
+╔════════════════╗  ╔══════════════════════╗   ╔═══════════════════════════════╗
+║  PERSISTENCE   ║  ║  VECTOR STORE        ║   ║  LLM TIER  (inference)        ║
+║                ║  ║                      ║   ║                               ║
+║  SQLite        ║  ║  ChromaDB            ║   ║  ┌─ 1. llama-3.1-8b-instant  ║
+║  (SQLAlchemy   ║  ║  sentence-           ║   ║  ├─ 2. llama-3.3-70b         ║
+║   Core 2.x)    ║  ║  transformers        ║   ║  ├─ 3. llama-4-scout-17b     ║
+║                ║  ║  all-MiniLM-L6-v2    ║   ║  ├─ 4. qwen3-32b             ║
+║  orders        ║  ║                      ║   ║  ├─ 5. gpt-oss-20b   (Groq)  ║
+║  order_items   ║  ║  kb_articles         ║   ║  │   (automatic failover ↓)  ║
+║  tickets       ║  ║  (FAQ semantic       ║   ║  └─ 6. llama3.2  (Ollama,   ║
+║  ticket_notes  ║  ║   search)            ║   ║        local, no API key)     ║
+║  refunds       ║  ║                      ║   ║                               ║
+║  conversations ║  ║  support_tickets     ║   ║  Optional: LangSmith tracing  ║
+║                ║  ║  (similar-issue      ║   ║  (auto-on with API key)        ║
+╚════════════════╝  ║   search)            ║   ╚═══════════════════════════════╝
+                    ╚══════════════════════╝
 ```
 
 **Step by step when you send a message:**
