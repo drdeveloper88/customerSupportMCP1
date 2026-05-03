@@ -87,11 +87,15 @@ directly into its Docker image so there is only one container to operate.
 | **RAG search** | ChromaDB + sentence-transformers all-MiniLM-L6-v2 — no API key needed |
 | **Real-time chat** | WebSocket streaming with word-by-word token delivery |
 | **Analytics dashboard** | Live ticket/order metrics via Server-Sent Events (SSE) |
-| **Rate limiting** | Per-customer sliding-window (10 req / 60 s — fully configurable) |
+| **Authentication** | JWT (HS256 8h) + bcrypt passwords, email verification, OAuth2 (Google/Facebook) |
+| **User management** | Registration, login, profile updates, password reset, account deletion |
+| **OAuth2** | Google + Facebook one-click login via Authlib (auto-hidden when unconfigured) |
+| **JWT revocation** | Per-token JTI stored in Redis — instant logout without token expiry wait |
+| **Rate limiting** | Per-customer AI: 10 req/60 s; Auth: 5 req/min; Reset: 3 req/min |
 | **Injection guard** | Regex-based prompt injection detection on every message (OWASP LLM01) |
 | **Observability** | LangSmith tracing (optional), structured JSON logs, request-ID headers |
-| **Database** | SQLite + SQLAlchemy Core 2.x, auto-seeded on first run |
-| **Docker** | Single `docker compose up` starts everything |
+| **Database** | SQLite (AI/support data) + PostgreSQL 16 (users/tokens) + Redis 7 (cache/sessions) |
+| **Docker** | Single `docker compose up` starts everything (5 services) |
 | **Tests** | pytest suite — unit + integration, fully hermetic, no real API calls |
 
 ---
@@ -391,7 +395,8 @@ customersupportmcp-client/            ← CLI client
 └── requirements.txt
 
 customersupportmcp-ui/                ← Full-stack web UI
-├── docker-compose.yml                Production compose (backend + frontend + ollama)
+├── docker-compose.yml                Production compose (postgres + redis + backend + frontend + ollama)
+├── README.md                         Web UI documentation
 ├── backend/
 │   ├── Dockerfile                    Multi-stage Python build
 │   ├── main.py                       FastAPI application factory
@@ -399,6 +404,7 @@ customersupportmcp-ui/                ← Full-stack web UI
 │   ├── api/v1/
 │   │   ├── router.py
 │   │   └── endpoints/
+│   │       ├── auth.py               All auth endpoints (register, login, OAuth, reset …)
 │   │       ├── analytics.py
 │   │       ├── chat.py               WebSocket streaming endpoint
 │   │       ├── faq.py
@@ -407,11 +413,19 @@ customersupportmcp-ui/                ← Full-stack web UI
 │   │       ├── orders.py
 │   │       └── tickets.py
 │   ├── core/
+│   │   ├── auth.py                   JWT create / verify / revoke (Redis blocklist)
 │   │   ├── config.py
+│   │   ├── database.py               PostgreSQL engine + session factory
+│   │   ├── limiter.py                Shared slowapi Limiter
 │   │   ├── logging_config.py
-│   │   └── middleware.py             Security headers + request context
-│   ├── models/schemas.py
+│   │   ├── middleware.py             JWT auth + security headers
+│   │   └── security.py              bcrypt hashing + token helpers
+│   ├── models/
+│   │   ├── schemas.py
+│   │   └── user.py                   User, PasswordResetToken, EmailVerificationToken
 │   └── services/
+│       ├── auth_service.py           Registration, login, OAuth, password reset
+│       ├── email_service.py          Async SMTP (console-log mode in dev)
 │       ├── support_service.py        Direct MCP tool imports (zero subprocess)
 │       ├── agent_service.py
 │       ├── connection_manager.py     WebSocket session tracking
@@ -422,13 +436,19 @@ customersupportmcp-ui/                ← Full-stack web UI
     ├── vite.config.js
     ├── package.json
     └── src/
-        ├── App.jsx                   Layout, customer selector, view switcher
+        ├── App.jsx                   Layout, auth gate, customer selector, view switcher
         ├── components/
         │   ├── Chat.jsx              WebSocket chat + SSE metrics bar
         │   ├── Dashboard.jsx         Analytics charts (Recharts)
+        │   ├── EmailVerification.jsx Email verification flow
+        │   ├── ForgotPassword.jsx    Forgot password form
+        │   ├── Login.jsx             Login form + OAuth buttons (auto-hidden when unconfigured)
+        │   ├── Profile.jsx           Account management slide-in panel
+        │   ├── Register.jsx          Registration form
+        │   ├── ResetPassword.jsx     Password reset form
         │   └── Sidebar.jsx           Orders, tickets, FAQ panels
         ├── api/
-        │   ├── apiClient.js
+        │   ├── apiClient.js          Fetch wrapper with auto Bearer token injection
         │   └── supportApi.js
         ├── constants/index.js        Customer IDs, suggestions, colours
         └── hooks/useWebSocket.js     Reconnecting WebSocket hook

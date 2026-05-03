@@ -21,10 +21,12 @@ Run
     fastmcp run main.py --transport stdio # explicit stdio
 """
 
+import datetime
 import json
 import logging
 import time
 
+from sqlalchemy import text
 from fastmcp import FastMCP
 
 from agent.graph import run_support_agent
@@ -184,7 +186,7 @@ def health_check() -> str:
     try:
         t0 = time.monotonic()
         with engine.connect() as conn:
-            conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+            conn.execute(text("SELECT 1"))
         checks["database"] = {"status": "ok", "latency_ms": round((time.monotonic() - t0) * 1000, 1)}
     except Exception as exc:
         checks["database"] = {"status": "error", "detail": str(exc)}
@@ -209,14 +211,15 @@ def health_check() -> str:
     checks["rate_limiter"] = {
         "max_requests_per_window": rate_limiter.max_requests,
         "window_seconds":          rate_limiter.window_seconds,
-        "active_keys":             len(rate_limiter._calls),  # noqa: SLF001
+        "active_keys":             rate_limiter.active_key_count(),
     }
 
     result = {
         "status":  "ok" if overall_ok else "degraded",
         "server":  SERVER_NAME,
         "checks":  checks,
-        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "version": "2.0.0",
     }
     return json.dumps(result, indent=2)
 

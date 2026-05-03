@@ -1,0 +1,99 @@
+/* EmailVerification.css */
+
+.ev-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ev-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.ev-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.ev-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.5rem;
+}
+
+.ev-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.ev-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 1.25rem;
+}
+
+.ev-error {
+  color: #f87171;
+}
+
+.ev-btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 0.75rem;
+}
+
+.ev-btn:hover:not(:disabled) {
+  background: #818cf8;
+}
+
+.ev-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ev-btn-secondary {
+  background: #334155;
+}
+
+.ev-btn-secondary:hover:not(:disabled) {
+  background: #475569;
+}
+
+.ev-link {
+  background: none;
+  border: none;
+  color: #818cf8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.ev-link:hover {
+  color: #a5b4fc;
+}

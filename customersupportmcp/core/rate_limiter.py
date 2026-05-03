@@ -95,6 +95,17 @@ class RateLimiter:
         with self._lock:
             self._calls.clear()
 
+    def active_key_count(self) -> int:
+        """Return the number of keys that have made at least one request in the
+        current window.  Thread-safe; does not modify any state."""
+        now = time.monotonic()
+        cutoff = now - self._window
+        with self._lock:
+            return sum(
+                1 for timestamps in self._calls.values()
+                if any(t > cutoff for t in timestamps)
+            )
+
     @property
     def max_requests(self) -> int:
         """Maximum requests allowed per window."""

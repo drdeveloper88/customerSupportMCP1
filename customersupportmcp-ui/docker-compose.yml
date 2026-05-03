@@ -2,8 +2,11 @@
 #
 # Services
 # ────────
+#  postgres  PostgreSQL 16 — persistent relational store
+#  redis     Redis 7 — session cache / rate-limiter state (future use)
 #  backend   FastAPI + MCP server bundled (port 8000)
 #  frontend  React/Vite → nginx static serve (port 3000)
+#  ollama    Local LLM fallback (GPU-optional)
 #
 # Usage
 # ─────
@@ -16,6 +19,42 @@
 version: "3.9"
 
 services:
+
+  # ── PostgreSQL 16 ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: customersupport-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       "${POSTGRES_DB:-support}"
+      POSTGRES_USER:     "${POSTGRES_USER:-support}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-support}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Redis 7 ───────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: customersupport-redis
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── Ollama (local LLM – free, unlimited, used when all Groq quota is gone) ─
   ollama:
@@ -67,16 +106,41 @@ services:
       # Ollama fallback — connects to the ollama service in this compose stack
       OLLAMA_BASE_URL: "http://ollama:11434"
       OLLAMA_ENABLED: "true"
-      # SQLite DB directory (separate from source code)
-      DATA_DIR: /app/db_data
+      # PostgreSQL (overrides SQLite)
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-support}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-support}"
+      # Redis
+      REDIS_URL: "redis://redis:6379/0"
+      # JWT — CHANGE THIS IN PRODUCTION
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-change-me-in-production-use-a-32-char-random-secret}"
+      JWT_EXPIRE_MINUTES: "${JWT_EXPIRE_MINUTES:-480}"
+      # OAuth2 social login (leave empty to disable)
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      FACEBOOK_APP_ID: "${FACEBOOK_APP_ID:-}"
+      FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET:-}"
+      OAUTH_REDIRECT_BASE_URL: "${OAUTH_REDIRECT_BASE_URL:-http://localhost:8000}"
+      # Password reset email
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      EMAIL_FROM: "${EMAIL_FROM:-noreply@example.com}"
+      EMAIL_ENABLED: "${EMAIL_ENABLED:-false}"
+      RESET_TOKEN_EXPIRE_MINUTES: "${RESET_TOKEN_EXPIRE_MINUTES:-30}"
+      # Rate limiting
+      RATE_LIMIT_AUTH: "${RATE_LIMIT_AUTH:-5/minute}"
+      RATE_LIMIT_RESET: "${RATE_LIMIT_RESET:-3/minute}"
     depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
       ollama:
         condition: service_started   # don't block – model pull runs in background
     ports:
       - "8000:8000"
     volumes:
-      # Persist SQLite DB and log files across restarts
-      - backend_data:/app/db_data
+      # Persist log files across restarts
       - backend_logs:/app/logs
     healthcheck:
       test: ["CMD", "python", "-c",
@@ -106,6 +170,7 @@ services:
         condition: service_healthy
 
 volumes:
-  backend_data:
+  postgres_data:
+  redis_data:
   backend_logs:
   ollama_models:    # persists pulled models — survives container restarts

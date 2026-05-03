@@ -46,12 +46,23 @@ _DB_PATH     = _DATA_DIR / "support.db"
 _ORDERS_JSON = _SRC_DIR / "mock_orders.json"
 
 # ── Engine ────────────────────────────────────────────────────────────────────
+# DATABASE_URL env var is honoured first (PostgreSQL in production).
+# Falls back to SQLite for local development.
 
-engine = create_engine(
-    f"sqlite:///{_DB_PATH}",
-    connect_args={"check_same_thread": False},
-    echo=False,
-)
+_DB_URL = os.environ.get("DATABASE_URL", "")
+if _DB_URL:
+    # postgres:// is a legacy Heroku/Render alias — SQLAlchemy requires postgresql://
+    if _DB_URL.startswith("postgres://"):
+        _DB_URL = _DB_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(_DB_URL, pool_pre_ping=True, pool_size=5, max_overflow=10, echo=False)
+    logger.info("Database engine: PostgreSQL")
+else:
+    engine = create_engine(
+        f"sqlite:///{_DB_PATH}",
+        connect_args={"check_same_thread": False},
+        echo=False,
+    )
+    logger.info("Database engine: SQLite (%s)", _DB_PATH)
 
 metadata = MetaData()
 

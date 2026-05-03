@@ -1,16 +1,87 @@
 """
-HTTP middleware: request-ID injection, timing, security headers.
+HTTP middleware: request-ID injection, timing, security headers, JWT auth,
+and IP-based rate limiting for authentication endpoints.
 """
 
 import time
 import uuid
 
 from fastapi import Request, Response
+from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 
+from core.config import JWT_ALGORITHM, JWT_SECRET_KEY
 from core.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+# Paths that do NOT require a token
+_PUBLIC_PREFIXES = (
+    "/api/v1/auth/",
+    "/api/v1/health",
+    "/api/docs",
+    "/api/redoc",
+    "/api/openapi.json",
+)
+
+
+class JWTAuthMiddleware(BaseHTTPMiddleware):
+    """Validate ``Authorization: Bearer <token>`` on protected routes.
+
+    WebSocket upgrade requests pass the token as a ``token`` query parameter
+    because browsers cannot set custom headers during the WebSocket handshake.
+    """
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        path = request.url.path
+
+        # Allow public routes without a token
+        if any(path.startswith(prefix) for prefix in _PUBLIC_PREFIXES):
+            return await call_next(request)
+
+        # WebSocket: token arrives as a query param
+        token: str | None = None
+        if request.headers.get("upgrade", "").lower() == "websocket":
+            token = request.query_params.get("token")
+        else:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header[len("Bearer "):]
+
+        if not token:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Not authenticated"},
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            # Check token revocation blocklist
+            jti = payload.get("jti")
+            if jti:
+                from core.auth import _get_redis
+                r = _get_redis()
+                if r:
+                    try:
+                        if r.get(f"token_blocklist:{jti}"):
+                            return JSONResponse(
+                                status_code=401,
+                                content={"detail": "Token has been revoked"},
+                                headers={"WWW-Authenticate": "Bearer"},
+                            )
+                    except Exception:
+                        pass  # Redis error — fail open
+            request.state.user = payload.get("sub")
+        except JWTError:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid or expired token"},
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return await call_next(request)
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
